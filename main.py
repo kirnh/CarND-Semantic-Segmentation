@@ -59,16 +59,16 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     # TODO: Implement function
     conv_1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, [1, 1], padding = 'same',
                                 kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
-
-    deconv_0 = tf.layers.conv2d_transpose(conv_1x1, num_classes, 4, [2, 2], padding = 'same',
+    deconv_0 = tf.layers.conv2d_transpose(conv_1x1, 512, 4, [2, 2], padding = 'same',
                                         kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
-    layer8_out = tf.add(deconv_0, vgg_layer3_out)
-
-    deconv_1 = tf.layers.conv2d_transpose(layer8_out, num_classes, 16, [8, 8], padding = 'same',
+    layer8_out = tf.add(deconv_0, vgg_layer4_out)
+    deconv_1 = tf.layers.conv2d_transpose(layer8_out, 256, 16, [8, 8], padding = 'same',
                                           kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
-    layer9_out = tf.add(deconv_1, vgg_layer4_out)
-
-    return layer9_out
+    layer9_out = tf.add(deconv_1, vgg_layer3_out)
+    # Is there another way of making the shape of the final_out as that of the input image?
+    final_out = tf.layers.conv2d_transpose(layer9_out, num_classes, 1, [1, 1], padding = 'same',
+                                            kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    return final_out
 
 tests.test_layers(layers)
 
@@ -85,7 +85,7 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     # TODO: Implement function
     logits = tf.reshape(nn_last_layer, (-1, num_classes))
     labels = tf.reshape(correct_label, (-1, num_classes))
-    cross_entropy_loss = tf.nn.softmax_cross_entropy_with_logits(logits, labels)
+    cross_entropy_loss = tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=labels)
     loss_operation = tf.reduce_mean(cross_entropy_loss)
     optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
     train_op = optimizer.minimize(loss_operation)
@@ -111,6 +111,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     :param learning_rate: TF Placeholder for learning rate
     """
     # TODO: Implement function
+    sess.run(tf.global_variables_initializer())
     for epoch in range(epochs):
         for images, labels in get_batches_fn(batch_size):
             # Training
@@ -123,8 +124,8 @@ tests.test_train_nn(train_nn)
 
 
 def run():
-    epochs = 200
-    batch_size = 10
+    epochs = 10
+    batch_size = 1
 
     num_classes = 2
     image_shape = (160, 576)
@@ -154,11 +155,12 @@ def run():
 
         # Placeholders for tensors
         learning_rate = tf.placeholder(tf.float32)
-        correct_label = tf.placeholder(size=[batch_size, None, None, None])
+        correct_label = tf.placeholder(dtype=tf.int32, shape=[batch_size, None, None, None])
 
         logits, train_op, cross_entropy_loss = optimize(output_layer, correct_label, learning_rate, num_classes)
 
         # TODO: Train NN using the train_nn function
+        print("Training started...")
         train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image,
                  correct_label, keep_prob, learning_rate)
 
