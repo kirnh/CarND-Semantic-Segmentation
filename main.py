@@ -60,14 +60,13 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     conv_1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, [1, 1], padding = 'same',
                                 kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
     deconv_0 = tf.layers.conv2d_transpose(conv_1x1, 512, 4, [2, 2], padding = 'same',
-                                        kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+                                kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
     layer8_out = tf.add(deconv_0, vgg_layer4_out)
-    deconv_1 = tf.layers.conv2d_transpose(layer8_out, 256, 16, [8, 8], padding = 'same',
-                                          kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    deconv_1 = tf.layers.conv2d_transpose(layer8_out, 256, 4, [2, 2], padding = 'same',
+                                kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
     layer9_out = tf.add(deconv_1, vgg_layer3_out)
-    # Is there another way of making the shape of the final_out as that of the input image?
-    final_out = tf.layers.conv2d_transpose(layer9_out, num_classes, 1, [1, 1], padding = 'same',
-                                            kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    final_out = tf.layers.conv2d_transpose(layer9_out, num_classes, 16, [8, 8], padding = 'same',
+                                kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
     return final_out
 
 tests.test_layers(layers)
