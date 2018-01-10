@@ -57,16 +57,16 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :return: The Tensor for the last layer of output
     """
     # TODO: Implement function
-    conv_1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, [1, 1], padding = 'same',
-                                kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
+    # conv_1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, [1, 1], padding = 'same',
+    #                             kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
     deconv_0 = tf.layers.conv2d_transpose(conv_1x1, 512, 4, [2, 2], padding = 'same',
-                                kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
+                                kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
     layer8_out = tf.add(deconv_0, vgg_layer4_out)
     deconv_1 = tf.layers.conv2d_transpose(layer8_out, 256, 4, [2, 2], padding = 'same',
-                                kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
+                                kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
     layer9_out = tf.add(deconv_1, vgg_layer3_out)
     final_out = tf.layers.conv2d_transpose(layer9_out, num_classes, 16, [8, 8], padding = 'same',
-                                kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
+                                kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
     return final_out
 
 tests.test_layers(layers)
@@ -115,7 +115,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
         for images, labels in get_batches_fn(batch_size):
             # Training
             _, cr_loss = sess.run([train_op, cross_entropy_loss], feed_dict={input_image:images, correct_label:labels,
-                                                                             keep_prob:1, learning_rate: 0.01})
+                                                                             keep_prob:0.6, learning_rate: 0.001})
             print(cr_loss)
     pass
 
