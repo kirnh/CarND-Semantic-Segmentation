@@ -57,21 +57,26 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :return: The Tensor for the last layer of output
     """
     # TODO: Implement function
-    # Scaling pooling layers before using them in the skip connections
-    pool3_out_scaled = tf.multiply(vgg_layer3_out, 0.0001, name=‘pool3_out_scaled’)
-    pool4_out_scaled = tf.multiply(vgg_layer4_out, 0.01, name=‘pool4_out_scaled’)
+    # # Scaling pooling layers before using them in the skip connections
+    # pool3_out_scaled = tf.multiply(vgg_layer3_out, 0.0001, name=‘pool3_out_scaled’)
+    # pool4_out_scaled = tf.multiply(vgg_layer4_out, 0.01, name=‘pool4_out_scaled’)
+    # Resampling the layer outputs to 2 classes using 1x1 convolutions
+    predict1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, [1, 1], padding = 'same',
+                                kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
+    predict2 = tf.layers.conv2d(vgg_layer4_out, num_classes, 1, [1, 1], padding = 'same',
+                                kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
+    predict3 = tf.layers.conv2d(vgg_layer3_out, num_classes, 1, [1, 1], padding = 'same',
+                                kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
     # Deconv and skip layer definitions
-    conv_1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, [1, 1], padding = 'same',
+    deconv1 = tf.layers.conv2d_transpose(predict1, num_classes, 4, [2, 2], padding = 'same',
                                 kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
-    deconv_0 = tf.layers.conv2d_transpose(conv_1x1, 512, 4, [2, 2], padding = 'same',
+    deconv1_2 = tf.add(deconv1, predict2)
+    deconv2 = tf.layers.conv2d_transpose(deconv1_2, num_classes, 4, [2, 2], padding = 'same',
                                 kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
-    layer8_out = tf.add(deconv_0, pool4_out_scaled)
-    deconv_1 = tf.layers.conv2d_transpose(layer8_out, 256, 4, [2, 2], padding = 'same',
+    deconv2_3 = tf.add(deconv2, predict3)
+    deconv3 = tf.layers.conv2d_transpose(deconv2_3, num_classes, 16, [8, 8], padding = 'same',
                                 kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
-    layer9_out = tf.add(deconv_1, pool3_out_scaled)
-    final_out = tf.layers.conv2d_transpose(layer9_out, num_classes, 16, [8, 8], padding = 'same',
-                                kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
-    return final_out
+    return deconv3
 
 tests.test_layers(layers)
 
