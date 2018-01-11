@@ -57,15 +57,15 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :return: The Tensor for the last layer of output
     """
     # TODO: Implement function
-    # # Scaling pooling layers before using them in the skip connections
-    # pool3_out_scaled = tf.multiply(vgg_layer3_out, 0.0001, name=‘pool3_out_scaled’)
-    # pool4_out_scaled = tf.multiply(vgg_layer4_out, 0.01, name=‘pool4_out_scaled’)
+    # Scaling pooling layers before using them in upsampling and the skip connections
+    pool3_out_scaled = tf.multiply(vgg_layer3_out, 0.0001, name=‘pool3_out_scaled’)
+    pool4_out_scaled = tf.multiply(vgg_layer4_out, 0.01, name=‘pool4_out_scaled’)
     # Resampling the layer outputs to 2 classes using 1x1 convolutions
     predict1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, [1, 1], padding = 'same',
                                 kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
-    predict2 = tf.layers.conv2d(vgg_layer4_out, num_classes, 1, [1, 1], padding = 'same',
+    predict2 = tf.layers.conv2d(pool4_out_scaled, num_classes, 1, [1, 1], padding = 'same',
                                 kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
-    predict3 = tf.layers.conv2d(vgg_layer3_out, num_classes, 1, [1, 1], padding = 'same',
+    predict3 = tf.layers.conv2d(pool3_out_scaled, num_classes, 1, [1, 1], padding = 'same',
                                 kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
     # Deconv and skip layer definitions
     deconv1 = tf.layers.conv2d_transpose(predict1, num_classes, 4, [2, 2], padding = 'same',
@@ -124,7 +124,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
         for images, labels in get_batches_fn(batch_size):
             # Training
             _, cr_loss = sess.run([train_op, cross_entropy_loss], feed_dict={input_image:images, correct_label:labels,
-                                                                             keep_prob:0.6, learning_rate: 0.001})
+                                                                             keep_prob:0.7, learning_rate: 0.0005})
             print(cr_loss)
     pass
 
@@ -132,7 +132,7 @@ tests.test_train_nn(train_nn)
 
 
 def run():
-    epochs = 5
+    epochs = 10
     batch_size = 1
 
     num_classes = 2
