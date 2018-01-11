@@ -59,8 +59,8 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     """
     # TODO: Implement function
     # Scaling pooling layers before using them in upsampling and the skip connections
-    pool3_out_scaled = tf.multiply(vgg_layer3_out, 0.0001, name=‘pool3_out_scaled’)
-    pool4_out_scaled = tf.multiply(vgg_layer4_out, 0.01, name=‘pool4_out_scaled’)
+    pool3_out_scaled = tf.multiply(vgg_layer3_out, 0.0001, name='pool3_out_scaled')
+    pool4_out_scaled = tf.multiply(vgg_layer4_out, 0.01, name='pool4_out_scaled')
     # Resampling the layer outputs to 2 classes using 1x1 convolutions
     predict1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, [1, 1], padding = 'same',
                                 kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
